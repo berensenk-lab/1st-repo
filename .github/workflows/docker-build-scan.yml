@@ -1,0 +1,69 @@
+﻿name: Build and Scan Docker Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      dockerfile_path:
+        description: 'Path to Dockerfile'
+        required: true
+        default: 'Dockerfile'
+      image_name:
+        description: 'Docker image name (e.g., almosega/myapp)'
+        required: true
+      image_tag:
+        description: 'Image tag'
+        required: false
+        default: 'latest'
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ github.event.inputs.dockerfile_path }}
+          tags: ${{ github.event.inputs.image_name }}:${{ github.event.inputs.image_tag }}
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Docker Scout CVE Scan
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: ${{ github.event.inputs.image_name }}:${{ github.event.inputs.image_tag }}
+          sarif-file: sarif.json
+          summary: true
+          exit-code: false
+      
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: sarif.json
+      
+      - name: Log in to Docker Hub
+        if: success()
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Push image if scan passes
+        if: success()
+        run: |
+          docker push ${{ github.event.inputs.image_name }}:${{ github.event.inputs.image_tag }}
+          echo "Image built, scanned, and pushed successfully"
