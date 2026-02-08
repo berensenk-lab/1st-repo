@@ -1,0 +1,92 @@
+﻿name: Security Issue Auto-Reporter
+
+on:
+  workflow_run:
+    workflows: ["Docker Scout CVE Scanning"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  create-remediation-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Critical CVE Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const criticalIssue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 CRITICAL: 7 Critical CVEs in almosega/minikube:patched',
+              body: `## Urgent Security Alert
+
+**Image:** \`almosega/minikube:patched\`
+**Critical CVEs:** 7
+**High CVEs:** 63
+**Medium CVEs:** 123
+
+### Top Vulnerable Packages
+- Go stdlib (1.19.8, 1.24.0, 1.24.4, etc) - Multiple critical CVEs
+- golang.org/x/crypto - Cryptographic vulnerabilities
+- github.com/docker/docker 27.0.2 - Container runtime issues
+
+### Immediate Actions Required
+1. Update Go to latest stable version (1.24.11+)
+2. Rebuild Docker dependencies
+3. Update all Go modules
+4. Re-scan after updates
+
+### Resources
+- Go Security: https://pkg.go.dev/std
+- CVE Details: Check Security tab for specifics
+- Remediation Guide: See docs/CVE-REMEDIATION-GUIDE.md
+
+### Timeline
+- **Target:** Fix within 48 hours
+- **Status:** Open
+- **Priority:** Critical
+
+/cc @berensenk-lab`,
+              labels: ['security', 'critical', 'cve', 'minikube']
+            });
+
+            console.log('Created critical issue:', criticalIssue.data.number);
+      
+      - name: Create Medium CVE Issue for open-webui
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const mediumIssue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '⚠️ Medium Priority: 5 Medium CVEs in almosega/open-webui:patched',
+              body: `## Security Alert - Medium Priority
+
+**Image:** \`almosega/open-webui:patched\`
+**Medium CVEs:** 5
+**Low CVEs:** 86
+
+### Vulnerable Packages
+- python3.11 - 4 Medium CVEs
+- tar - 1 Medium CVE
+
+### Recommended Actions
+1. Update python3.11 to latest patch
+2. Update tar package
+3. Consider using Python 3.12 or 3.13
+4. Re-scan to verify fixes
+
+### Timeline
+- **Target:** Fix within 1 week
+- **Status:** Open
+- **Priority:** Medium
+
+/cc @berensenk-lab`,
+              labels: ['security', 'medium', 'cve', 'open-webui']
+            });
+
+            console.log('Created medium issue:', mediumIssue.data.number);
