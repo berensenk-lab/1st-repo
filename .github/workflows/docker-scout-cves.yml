@@ -11,26 +11,40 @@ on:
 permissions:
   contents: read
   security-events: write
-  pull-requests: write
 
 jobs:
   docker-scout-cve-scan:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        image:
-          - 'nginx:latest'
-          - 'ubuntu:latest'
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Docker Scout Scan
+      - name: Run Docker Scout on nginx
         uses: docker/scout-action@v1
         with:
           command: cves
-          image: ${{ matrix.image }}
-          sarif-file: sarif-${{ strategy.job-index }}.json
+          image: nginx:latest
+          sarif-file: sarif-nginx.json
           summary: true
+      
+      - name: Run Docker Scout on alpine
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: alpine:latest
+          sarif-file: sarif-alpine.json
+          summary: true
+      
+      - name: Upload nginx SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: sarif-nginx.json
+          category: scout-nginx
+      
+      - name: Upload alpine SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: sarif-alpine.json
+          category: scout-alpine
