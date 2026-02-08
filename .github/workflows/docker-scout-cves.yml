@@ -14,6 +14,14 @@ permissions:
 jobs:
   docker-scout-cve-scan:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - 'almosega/minikube:patched'
+          - 'almosega/open-webui:patched'
+          - 'nginx:latest'
+          - 'alpine:latest'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,16 +32,10 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       
-      - name: Run Docker Scout on nginx
+      - name: Run Docker Scout on ${{ matrix.image }}
         uses: docker/scout-action@v1
         with:
           command: cves
-          image: nginx:latest
+          image: ${{ matrix.image }}
           summary: true
-      
-      - name: Run Docker Scout on alpine
-        uses: docker/scout-action@v1
-        with:
-          command: cves
-          image: alpine:latest
-          summary: true
+          write-comment: false
