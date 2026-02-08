@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   docker-scout-cve-scan:
@@ -30,7 +29,6 @@ jobs:
         with:
           command: cves
           image: nginx:latest
-          sarif-file: sarif-nginx.json
           summary: true
       
       - name: Run Docker Scout on alpine
@@ -38,19 +36,4 @@ jobs:
         with:
           command: cves
           image: alpine:latest
-          sarif-file: sarif-alpine.json
           summary: true
-      
-      - name: Upload nginx SARIF
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: sarif-nginx.json
-          category: scout-nginx
-      
-      - name: Upload alpine SARIF
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: sarif-alpine.json
-          category: scout-alpine
