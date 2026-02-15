@@ -1,4 +1,4 @@
-﻿name: Docker Scout - Strict CVE Check
+name: Docker Scout - Strict CVE Check
 
 on:
   pull_request:
@@ -40,12 +40,18 @@ jobs:
       - name: Pull Docker image
         run: docker pull ${{ matrix.image }}
       
+      - name: Generate safe filename
+        id: filename
+        run: |
+          SAFE_NAME=$(echo "${{ matrix.image }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          echo "safe_name=$SAFE_NAME" >> $GITHUB_OUTPUT
+      
       - name: Docker Scout CVE Scan
         uses: docker/scout-action@v1
         with:
           command: cves
           image: ${{ matrix.image }}
-          sarif-file: sarif-${{ matrix.image }}.json
+          sarif-file: sarif-${{ steps.filename.outputs.safe_name }}.json
           summary: true
           write-comment: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -53,11 +59,11 @@ jobs:
           only-severities: critical,high
       
       - name: Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
-          sarif_file: sarif-${{ matrix.image }}.json
-          category: docker-scout-strict-${{ matrix.image }}
+          sarif_file: sarif-${{ steps.filename.outputs.safe_name }}.json
+          category: docker-scout-strict-${{ steps.filename.outputs.safe_name }}
       
       - name: Create issue on CVE failure
         if: failure()
@@ -70,7 +76,7 @@ jobs:
             github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Critical/High CVEs found in ${ image }`,
-              body: `## Warning: Security Alert\n\n**Image:** ` + image + `\n**Run:** ` + runUrl + `\n\nCritical or high severity CVEs were detected.`,
+              title: `Critical/High CVEs found in ${image}`,
+              body: `## ⚠️ Security Alert\n\n**Image:** \`${image}\`\n**Run:** ${runUrl}\n\nCritical or high severity CVEs were detected. Please review and remediate.\n\n### Next Steps:\n1. Review scan results in the [Security tab](https://github.com/${{ github.repository }}/security/code-scanning)\n2. Update base images and dependencies\n3. Rebuild and rescan the image\n4. Close this issue once resolved`,
               labels: ['security', 'cve', 'high-priority']
             });

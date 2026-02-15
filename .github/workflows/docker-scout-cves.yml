@@ -1,4 +1,4 @@
-﻿name: Docker Scout CVE Scanning
+name: Docker Scout CVE Scanning
 
 on:
   schedule:
@@ -7,9 +7,15 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
+  security-events: write
+  pull-requests: write
+  actions: read
 
 jobs:
   docker-scout-cve-scan:
@@ -20,12 +26,13 @@ jobs:
         image:
           - 'almosega/minikube:patched'
           - 'almosega/open-webui:patched'
-          - 'nginx:latest'
-          - 'alpine:latest'
-          - 'sillytavern:secure'
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -33,10 +40,28 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       
-      - name: Run Docker Scout on ${{ matrix.image }}
+      - name: Pull Docker image
+        run: docker pull ${{ matrix.image }}
+      
+      - name: Generate safe filename
+        id: filename
+        run: |
+          SAFE_NAME=$(echo "${{ matrix.image }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          echo "safe_name=$SAFE_NAME" >> $GITHUB_OUTPUT
+      
+      - name: Docker Scout CVE Scan
         uses: docker/scout-action@v1
         with:
           command: cves
           image: ${{ matrix.image }}
+          sarif-file: sarif-${{ steps.filename.outputs.safe_name }}.json
           summary: true
-          write-comment: false
+          write-comment: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload SARIF results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: sarif-${{ steps.filename.outputs.safe_name }}.json
+          category: docker-scout-${{ steps.filename.outputs.safe_name }}
