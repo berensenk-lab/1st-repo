@@ -1,7 +1,7 @@
 ﻿# ============================================================================
 # Stage 1: Builder - Compile and prepare application
 # ============================================================================
-FROM node:lts-alpine3.22 AS builder
+FROM node:20.11-alpine3.20 AS builder
 
 ARG APP_HOME=/home/node/app
 WORKDIR ${APP_HOME}
@@ -33,7 +33,7 @@ RUN chmod +x "./docker/docker-entrypoint.sh" && \
 # ============================================================================
 # Stage 2: Runtime - Minimal production image
 # ============================================================================
-FROM node:lts-alpine3.22
+FROM node:20.11-alpine3.20
 
 ARG APP_HOME=/home/node/app
 
@@ -64,8 +64,8 @@ RUN mkdir -p ./config && \
     ln -s "./config/config.yaml" "config.yaml" || true && \
     chown -R nodejs:nodejs ./
 
-# Configure git safe directory
-RUN git config --global --add safe.directory "*"
+# Configure git safe directory (restrict to app path for security)
+RUN git config --global --add safe.directory /home/node/app
 
 # Switch to non-root user
 USER nodejs
