@@ -1,27 +1,13 @@
-# Multi-stage build for minikube using Docker Hardened Images
-# Stage 1: Build stage with Go compiler
-FROM docker.io/library/golang:1.23-bookworm AS builder
-
-WORKDIR /app
-
-# Copy source code
-COPY . .
-
-# Build static binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -ldflags="-s -w" \
-    -o minikube .
-
-# Stage 2: Runtime stage using DHI base image
-FROM ghcr.io/docker/hardened/distroless/cc:latest
+# Lightweight hardened base image for container applications
+# Uses distroless for minimal attack surface
+FROM gcr.io/distroless/cc-debian12:latest
 
 # Set labels
 LABEL maintainer="almosega"
-LABEL description="Minikube application with Docker Hardened Images"
+LABEL description="Hardened container with minimal attack surface using distroless"
 
-# Copy binary from builder
-COPY --from=builder /app/minikube /app/minikube
+# Copy any application files if needed
+# COPY ./app /app
 
-# Set entry point
-ENTRYPOINT ["/app/minikube"]
-CMD ["version"]
+# Default command
+CMD ["/bin/sh"]
