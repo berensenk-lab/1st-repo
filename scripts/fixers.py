@@ -5,7 +5,8 @@ Extensible design for adding new fixes.
 
 import subprocess
 from pathlib import Path
-from typing import List, Callable
+from typing import Callable, List
+
 
 class DockerFixer:
     """Fixes Docker/container-related issues."""
@@ -42,6 +43,7 @@ dist
 
         return False
 
+
 class SecurityFixer:
     """Fixes security-related issues."""
 
@@ -53,11 +55,12 @@ class SecurityFixer:
                 ["git", "secrets", "--scan"],
                 cwd=workspace,
                 capture_output=True,
-                timeout=30
+                timeout=30,
             )
             return result.returncode
         except:
             return 1
+
 
 class ConfigFixer:
     """Fixes configuration issues."""
@@ -83,7 +86,7 @@ class ConfigFixer:
                         "interval": "30s",
                         "timeout": "10s",
                         "retries": 3,
-                        "start_period": "40s"
+                        "start_period": "40s",
                     }
                     modified = True
 
@@ -95,6 +98,7 @@ class ConfigFixer:
             pass
 
         return False
+
 
 class FixerRegistry:
     """Registry of available fixers."""

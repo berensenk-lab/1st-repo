@@ -4,16 +4,18 @@ Auto-Fix Agent: Detects and automatically fixes common issues in projects.
 Supports code quality, formatting, dependencies, and security scanning.
 """
 
-import os
-import sys
 import json
+import os
 import subprocess
-from pathlib import Path
-from typing import List, Dict, Any
+import sys
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List
+
 from colorama import Fore, Style, init
 
 init(autoreset=True)
+
 
 @dataclass
 class Issue:
@@ -24,6 +26,7 @@ class Issue:
     message: str
     fixable: bool
     fix_command: str = None
+
 
 class IssueDetector:
     """Detects various types of issues in the codebase."""
@@ -42,40 +45,46 @@ class IssueDetector:
                 ["black", "--check", "--quiet", self.workspace],
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=30,
             )
             if result.returncode != 0:
-                issues.append(Issue(
-                    issue_type="formatting",
-                    severity="low",
-                    file="(multiple)",
-                    line=0,
-                    message="Code not formatted according to Black standards",
-                    fixable=True,
-                    fix_command=f"black {self.workspace}"
-                ))
+                issues.append(
+                    Issue(
+                        issue_type="formatting",
+                        severity="low",
+                        file="(multiple)",
+                        line=0,
+                        message="Code not formatted according to Black standards",
+                        fixable=True,
+                        fix_command=f"black {self.workspace}",
+                    )
+                )
 
             # Check import sorting with isort
             result = subprocess.run(
                 ["isort", "--check-only", "--quiet", self.workspace],
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=30,
             )
             if result.returncode != 0:
-                issues.append(Issue(
-                    issue_type="imports",
-                    severity="low",
-                    file="(multiple)",
-                    line=0,
-                    message="Imports not sorted correctly",
-                    fixable=True,
-                    fix_command=f"isort {self.workspace}"
-                ))
+                issues.append(
+                    Issue(
+                        issue_type="imports",
+                        severity="low",
+                        file="(multiple)",
+                        line=0,
+                        message="Imports not sorted correctly",
+                        fixable=True,
+                        fix_command=f"isort {self.workspace}",
+                    )
+                )
         except FileNotFoundError:
             pass
         except Exception as e:
-            print(f"{Fore.YELLOW}Warning: Formatting check failed: {e}{Style.RESET_ALL}")
+            print(
+                f"{Fore.YELLOW}Warning: Formatting check failed: {e}{Style.RESET_ALL}"
+            )
 
         return issues
 
@@ -88,20 +97,22 @@ class IssueDetector:
                 ["bandit", "-r", str(self.workspace), "-f", "json", "-q"],
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=60,
             )
 
             if result.stdout:
                 data = json.loads(result.stdout)
                 for issue in data.get("results", []):
-                    issues.append(Issue(
-                        issue_type="security",
-                        severity=issue.get("severity", "medium").lower(),
-                        file=issue.get("filename", "unknown"),
-                        line=issue.get("line_number", 0),
-                        message=issue.get("issue_text", "Security issue detected"),
-                        fixable=False  # Security issues usually need manual review
-                    ))
+                    issues.append(
+                        Issue(
+                            issue_type="security",
+                            severity=issue.get("severity", "medium").lower(),
+                            file=issue.get("filename", "unknown"),
+                            line=issue.get("line_number", 0),
+                            message=issue.get("issue_text", "Security issue detected"),
+                            fixable=False,  # Security issues usually need manual review
+                        )
+                    )
         except FileNotFoundError:
             pass
         except Exception as e:
@@ -122,21 +133,23 @@ class IssueDetector:
                 ["pylint"] + [str(f) for f in py_files[:10]],  # Limit to first 10 files
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=60,
             )
 
             # Parse pylint output (simplified - just count issues)
             output = result.stdout + result.stderr
             if "error" in output.lower() or "warning" in output.lower():
-                issues.append(Issue(
-                    issue_type="linting",
-                    severity="medium",
-                    file="(multiple)",
-                    line=0,
-                    message="Linting issues detected",
-                    fixable=True,
-                    fix_command=f"pylint --rcfile=/dev/null {self.workspace} --fix-imports=y"
-                ))
+                issues.append(
+                    Issue(
+                        issue_type="linting",
+                        severity="medium",
+                        file="(multiple)",
+                        line=0,
+                        message="Linting issues detected",
+                        fixable=True,
+                        fix_command=f"pylint --rcfile=/dev/null {self.workspace} --fix-imports=y",
+                    )
+                )
         except FileNotFoundError:
             pass
         except Exception as e:
@@ -156,21 +169,23 @@ class IssueDetector:
                     ["pip", "list", "--outdated", "--format", "json"],
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=30,
                 )
 
                 if result.stdout:
                     outdated = json.loads(result.stdout)
                     if outdated:
-                        issues.append(Issue(
-                            issue_type="dependencies",
-                            severity="medium",
-                            file=str(req_file),
-                            line=0,
-                            message=f"{len(outdated)} outdated dependencies found",
-                            fixable=True,
-                            fix_command=f"pip install --upgrade pip && pip install -r {req_file} --upgrade"
-                        ))
+                        issues.append(
+                            Issue(
+                                issue_type="dependencies",
+                                severity="medium",
+                                file=str(req_file),
+                                line=0,
+                                message=f"{len(outdated)} outdated dependencies found",
+                                fixable=True,
+                                fix_command=f"pip install --upgrade pip && pip install -r {req_file} --upgrade",
+                            )
+                        )
             except Exception as e:
                 pass
 
@@ -183,19 +198,21 @@ class IssueDetector:
                     cwd=self.workspace,
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=30,
                 )
 
                 if result.stdout and result.stdout != "{}":
-                    issues.append(Issue(
-                        issue_type="npm-dependencies",
-                        severity="medium",
-                        file="package.json",
-                        line=0,
-                        message="Outdated npm packages found",
-                        fixable=True,
-                        fix_command="npm update"
-                    ))
+                    issues.append(
+                        Issue(
+                            issue_type="npm-dependencies",
+                            severity="medium",
+                            file="package.json",
+                            line=0,
+                            message="Outdated npm packages found",
+                            fixable=True,
+                            fix_command="npm update",
+                        )
+                    )
             except Exception as e:
                 pass
 
@@ -213,6 +230,7 @@ class IssueDetector:
 
         self.issues = all_issues
         return all_issues
+
 
 class IssueFixer:
     """Applies fixes to detected issues."""
@@ -245,12 +263,14 @@ class IssueFixer:
                 subprocess.run(
                     ["pip", "install", "-r", str(req_file), "--upgrade"],
                     check=True,
-                    timeout=120
+                    timeout=120,
                 )
 
             # Node.js
             if (self.workspace / "package.json").exists():
-                subprocess.run(["npm", "update"], cwd=self.workspace, check=True, timeout=120)
+                subprocess.run(
+                    ["npm", "update"], cwd=self.workspace, check=True, timeout=120
+                )
 
             self.fixed_count += 1
             print(f"{Fore.GREEN}✓ Dependencies updated{Style.RESET_ALL}")
@@ -264,8 +284,12 @@ class IssueFixer:
         print(f"\n{Fore.CYAN}🛠 Applying fixes...{Style.RESET_ALL}\n")
 
         # Group issues by type
-        formatting_issues = [i for i in issues if i.issue_type in ["formatting", "imports"]]
-        dep_issues = [i for i in issues if i.issue_type in ["dependencies", "npm-dependencies"]]
+        formatting_issues = [
+            i for i in issues if i.issue_type in ["formatting", "imports"]
+        ]
+        dep_issues = [
+            i for i in issues if i.issue_type in ["dependencies", "npm-dependencies"]
+        ]
 
         if formatting_issues:
             self.fix_formatting()
@@ -274,6 +298,7 @@ class IssueFixer:
             self.fix_dependencies()
 
         return self.fixed_count
+
 
 class WorkflowOrchestrator:
     """Orchestrates the full auto-fix workflow."""
@@ -299,7 +324,13 @@ class WorkflowOrchestrator:
         # Report findings
         print(f"\n{Fore.YELLOW}Found {len(issues)} issue(s):{Style.RESET_ALL}\n")
         for issue in issues:
-            icon = "🔴" if issue.severity == "critical" else "🟠" if issue.severity == "high" else "🟡"
+            icon = (
+                "🔴"
+                if issue.severity == "critical"
+                else "🟠"
+                if issue.severity == "high"
+                else "🟡"
+            )
             fixable = "✓ fixable" if issue.fixable else "⚠ requires review"
             print(f"{icon} [{issue.issue_type}] {issue.message} ({fixable})")
 
@@ -308,10 +339,13 @@ class WorkflowOrchestrator:
 
         # Summary
         print(f"\n{Fore.MAGENTA}{'='*60}{Style.RESET_ALL}")
-        print(f"{Fore.GREEN}Workflow Complete: {fixed_count} fix(es) applied{Style.RESET_ALL}")
+        print(
+            f"{Fore.GREEN}Workflow Complete: {fixed_count} fix(es) applied{Style.RESET_ALL}"
+        )
         print(f"{Fore.MAGENTA}{'='*60}{Style.RESET_ALL}\n")
 
         return True
+
 
 if __name__ == "__main__":
     workspace = os.getenv("GITHUB_WORKSPACE", ".")

@@ -1,17 +1,14 @@
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
 WORKDIR /fixer
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install system dependencies and Python packages in one layer
+RUN apk add --no-cache \
     git \
     curl \
     jq \
-    npm \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies for issue detection
-RUN pip install --no-cache-dir \
+    npm && \
+    pip install --no-cache-dir \
     pyyaml==6.0.1 \
     requests==2.31.0 \
     click==8.1.7 \
@@ -31,5 +28,4 @@ COPY scripts/validators.py /fixer/validators.py
 # Create scripts directory if it doesn't exist
 RUN mkdir -p /fixer/scripts || true
 
-ENTRYPOINT ["python"]
-CMD ["/fixer/agent.py"]
+ENTRYPOINT ["python", "/fixer/agent.py"]

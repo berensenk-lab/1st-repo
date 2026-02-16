@@ -6,12 +6,14 @@ import subprocess
 from pathlib import Path
 from typing import Tuple
 
+
 class Validator:
     """Base validator class."""
 
     def validate(self) -> Tuple[bool, str]:
         """Run validation. Returns (success, message)."""
         raise NotImplementedError
+
 
 class PythonValidator(Validator):
     """Validates Python code changes."""
@@ -24,10 +26,10 @@ class PythonValidator(Validator):
         try:
             # Check syntax
             result = subprocess.run(
-                ["python", "-m", "py_compile"] +
-                [str(f) for f in self.workspace.rglob("*.py")],
+                ["python", "-m", "py_compile"]
+                + [str(f) for f in self.workspace.rglob("*.py")],
                 capture_output=True,
-                timeout=30
+                timeout=30,
             )
 
             if result.returncode != 0:
@@ -38,7 +40,7 @@ class PythonValidator(Validator):
                 ["pytest", str(self.workspace), "-v"],
                 capture_output=True,
                 text=True,
-                timeout=120
+                timeout=120,
             )
 
             if result.returncode != 0:
@@ -49,6 +51,7 @@ class PythonValidator(Validator):
             return True, "Python validators not available"
         except Exception as e:
             return False, f"Validation error: {str(e)}"
+
 
 class JavaScriptValidator(Validator):
     """Validates JavaScript/Node code changes."""
@@ -68,7 +71,7 @@ class JavaScriptValidator(Validator):
                 cwd=self.workspace,
                 capture_output=True,
                 text=True,
-                timeout=120
+                timeout=120,
             )
 
             if result.returncode != 0:
@@ -79,6 +82,7 @@ class JavaScriptValidator(Validator):
             return True, "npm not available"
         except Exception as e:
             return False, f"Validation error: {str(e)}"
+
 
 class DockerValidator(Validator):
     """Validates Docker configuration changes."""
@@ -93,10 +97,18 @@ class DockerValidator(Validator):
             if dockerfile.exists():
                 # Build image to check for errors
                 result = subprocess.run(
-                    ["docker", "build", "-f", str(dockerfile), "-t", "validator:latest", str(self.workspace)],
+                    [
+                        "docker",
+                        "build",
+                        "-f",
+                        str(dockerfile),
+                        "-t",
+                        "validator:latest",
+                        str(self.workspace),
+                    ],
                     capture_output=True,
                     text=True,
-                    timeout=180
+                    timeout=180,
                 )
 
                 if result.returncode != 0:
@@ -110,7 +122,7 @@ class DockerValidator(Validator):
                     cwd=self.workspace,
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=30,
                 )
 
                 if result.returncode != 0:
@@ -121,6 +133,7 @@ class DockerValidator(Validator):
             return True, "Docker not available for validation"
         except Exception as e:
             return False, f"Validation error: {str(e)}"
+
 
 class ValidatorChain:
     """Runs multiple validators."""
@@ -141,19 +154,23 @@ class ValidatorChain:
         for validator in self.validators:
             try:
                 passed, message = validator.validate()
-                results.append({
-                    "validator": validator.__class__.__name__,
-                    "passed": passed,
-                    "message": message
-                })
+                results.append(
+                    {
+                        "validator": validator.__class__.__name__,
+                        "passed": passed,
+                        "message": message,
+                    }
+                )
                 if not passed:
                     all_passed = False
             except Exception as e:
-                results.append({
-                    "validator": validator.__class__.__name__,
-                    "passed": False,
-                    "message": f"Error: {str(e)}"
-                })
+                results.append(
+                    {
+                        "validator": validator.__class__.__name__,
+                        "passed": False,
+                        "message": f"Error: {str(e)}",
+                    }
+                )
                 all_passed = False
 
         return all_passed, results

@@ -3,11 +3,12 @@ Specialized detectors for different issue categories.
 Extensible design for adding new detectors.
 """
 
-import subprocess
 import json
-from pathlib import Path
-from typing import List, Dict, Any
+import subprocess
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List
+
 
 @dataclass
 class DetectionResult:
@@ -16,6 +17,7 @@ class DetectionResult:
     count: int
     details: Dict[str, Any]
     severity: str
+
 
 class DockerDetector:
     """Detects Docker/container-related issues."""
@@ -40,8 +42,9 @@ class DockerDetector:
             found=True,
             count=sum(not v for v in issues.values()),
             details=issues,
-            severity="medium"
+            severity="medium",
         )
+
 
 class GitDetector:
     """Detects Git-related issues."""
@@ -55,7 +58,7 @@ class GitDetector:
                 cwd=workspace,
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
             )
 
             commits = result.stdout.split("\n")
@@ -66,16 +69,13 @@ class GitDetector:
                 found=issues > 0,
                 count=issues,
                 details={"bad_commits": issues, "total_checked": len(commits)},
-                severity="low"
+                severity="low",
             )
         except:
             return DetectionResult(
-                category="git",
-                found=False,
-                count=0,
-                details={},
-                severity="low"
+                category="git", found=False, count=0, details={}, severity="low"
             )
+
 
 class ConfigDetector:
     """Detects configuration file issues."""
@@ -92,14 +92,19 @@ class ConfigDetector:
             issues = {
                 "missing_healthcheck": "healthcheck" not in content,
                 "missing_resource_limits": "deploy" not in content,
-                "hardcoded_passwords": any(p in content for p in ["password:", "MYSQL_ROOT_PASSWORD", "POSTGRES_PASSWORD"])
+                "hardcoded_passwords": any(
+                    p in content
+                    for p in ["password:", "MYSQL_ROOT_PASSWORD", "POSTGRES_PASSWORD"]
+                ),
             }
-            results.append(DetectionResult(
-                category="docker-compose",
-                found=any(issues.values()),
-                count=sum(issues.values()),
-                details=issues,
-                severity="high" if issues["hardcoded_passwords"] else "medium"
-            ))
+            results.append(
+                DetectionResult(
+                    category="docker-compose",
+                    found=any(issues.values()),
+                    count=sum(issues.values()),
+                    details=issues,
+                    severity="high" if issues["hardcoded_passwords"] else "medium",
+                )
+            )
 
         return results
