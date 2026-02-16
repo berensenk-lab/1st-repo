@@ -9,6 +9,7 @@ Your repository has **significant meaningful changes** related to Docker securit
 ## ✅ MEANINGFUL CHANGES (Functional & Safety)
 
 ### 1. Dockerfile.sillytavern - New Secure Image
+
 **Commit:** `9c5e7a5` - "Add secure SillyTavern Dockerfile with Docker Scout scanning"
 
 **Functionality:**
@@ -41,6 +42,7 @@ RUN git config --global --add safe.directory /home/node/app
 ---
 
 ### 2. Docker Scout CVE Scanning Workflows - Security Monitoring
+
 **Commits:** Multiple additions
 
 - `docker-scout-cves.yml` - Weekly CVE scans
@@ -65,12 +67,15 @@ RUN git config --global --add safe.directory /home/node/app
 ---
 
 ### 3. **GitHub Workflows Enhancements**
+
 **New Workflows:**
+
 1. **docker-build-scan.yml** - Build and scan custom images
 2. **docker-scout-notifications.yml** - Alert on vulnerabilities
 3. **security-reporter.yml** - Create issues for CVEs
 
 **Security Impact:**
+
 - Automates security checks in CI/CD pipeline
 - Prevents merges with critical CVEs
 - Tracks security debt in GitHub Issues
@@ -81,12 +86,14 @@ RUN git config --global --add safe.directory /home/node/app
 ## ⚠️ CRITICAL ISSUES FOUND
 
 ### 1. Repository Corruption (BLOCKING)
+
 **Problem:** Invalid filenames in Git history
 
 ```
 File 2: .github/workflows/docker-scout-notifications.yml
 File 3: .github/workflows/docker-build-scan.yml
 ```
+
 - Windows cannot create/read these files (invalid characters)
 - Prevents cloning and checking out on Windows systems
 - Likely caused by accidental file uploads from WSL or non-Windows path
@@ -96,6 +103,7 @@ File 3: .github/workflows/docker-build-scan.yml
 ---
 
 ### 2. .venv Directory Committed (CRITICAL SAFETY)
+
 **Problem:** Virtual environment with ~2000+ files committed to Git
 
 - 📦 Massive bloat (10+ MB of pip packages)
@@ -103,6 +111,7 @@ File 3: .github/workflows/docker-build-scan.yml
 - 🔓 Exposes internal build environment
 
 **Action Needed:**
+
 ```powershell
 cd 1st-repo
 git rm -r --cached .venv/
@@ -115,6 +124,7 @@ Then add to `.gitignore` ✅ (Already done)
 ---
 
 ### 3. Incomplete .gitignore
+
 **Before:** Only excluded `__pycache__/` and `*.pyc`
 **Now:** Comprehensive exclusions for Python, Node.js, IDE, OS files ✅
 
@@ -123,6 +133,7 @@ Then add to `.gitignore` ✅ (Already done)
 ## 🔍 CODE QUALITY ASSESSMENT
 
 ### Dockerfile Security Best Practices
+
 - ✅ Multi-stage build (reduces final image size)
 - ✅ Non-root user
 - ✅ Minimal Alpine base image
@@ -131,30 +142,32 @@ Then add to `.gitignore` ✅ (Already done)
 - ✅ `--no-cache` flags for RUN commands
 - ⚠️ `npm ci` is used (good) but `--omit=dev` should be verified
 
-
 ### Docker Scout Workflows
+
 - ✅ Separate matrix for different images
 - ✅ Scheduled runs (cost-effective)
 - ✅ Manual trigger for ad-hoc scans
 - ✅ Docker secrets management (credentials)
 - ⚠️ No failure conditions defined (scans run but don't block PRs)
 
-
 ---
 
 ## 📋 SAFETY CONCERNS
 
 ### High Priority
+
 1. **Git safe directory wildcard** - Change `"*"` to specific path
 2. **Remove .venv from history** - Security/bloat issue
 3. **Fix corrupted filenames** - Requires rebasing
 
 ### Medium Priority
+
 1. **Add CVE failure thresholds** - Scout scans should fail on critical/high CVEs
 2. **Rotate Docker secrets** - Ensure credentials have expiration policies
 3. **Pin image versions** - Avoid `alpine:latest` use `alpine:3.22`
 
 ### Low Priority
+
 1. **Add SBOM generation** - Track software bill of materials
 2. **Add container signing** - Sign images with cosign
 3. **Document security policies** - Create SECURITY.md
@@ -167,12 +180,15 @@ Then add to `.gitignore` ✅ (Already done)
 
 1. Update `.gitignore` ✅ (Done)
 2. Remove `.venv`:
+
    ```powershell
    git rm -r --cached .venv/
    git add .gitignore
    git commit -m "Remove committed .venv and add proper .gitignore" -m "Assisted-By: cagent"
    ```
+
 3. Fix git safe directory in Dockerfile:
+
    ```dockerfile
    RUN git config --global --add safe.directory /home/node/app
    ```
@@ -206,6 +222,7 @@ Then add to `.gitignore` ✅ (Already done)
 ## 🎯 NEXT STEPS
 
 1. **Clean the repository:**
+
    ```powershell
    cd 1st-repo
    git rm -r --cached .venv/

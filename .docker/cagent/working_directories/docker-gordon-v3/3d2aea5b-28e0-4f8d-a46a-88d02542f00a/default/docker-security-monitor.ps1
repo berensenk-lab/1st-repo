@@ -36,7 +36,7 @@ if ([string]::IsNullOrWhiteSpace($containers)) {
     Write-Host ""
     Write-Host "Scanning local images instead..." -ForegroundColor Yellow
     $images = docker images --format "{{.Repository}}:{{.Tag}}" | Select-Object -First 5
-    
+
     foreach ($image in $images) {
         if ($image -and $image -ne "<none>:<none>") {
             Write-Host ""
@@ -66,6 +66,6 @@ Write-Host "==================================" -ForegroundColor Cyan
 Stop-Transcript
 
 # Keep last 30 days of logs only
-Get-ChildItem $LogDir -Filter "scan_*.log" | 
-    Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) } | 
+Get-ChildItem $LogDir -Filter "scan_*.log" |
+    Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) } |
     Remove-Item -Force

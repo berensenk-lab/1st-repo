@@ -26,12 +26,14 @@ git push origin main
 Update `Dockerfile.sillytavern` to fix the git security issue.
 
 **CHANGE THIS:**
+
 ```dockerfile
 # Configure git safe directory
 RUN git config --global --add safe.directory "*"
 ```
 
 **TO THIS:**
+
 ```dockerfile
 # Configure git safe directory (only for this app, not wildcard)
 RUN git config --global --add safe.directory /home/node/app
@@ -51,6 +53,7 @@ git push origin main
 ## Step 3: Pin Alpine Version
 
 **CHANGE THIS:**
+
 ```dockerfile
 FROM node:lts-alpine3.22 AS builder
 ...
@@ -58,6 +61,7 @@ FROM node:lts-alpine3.22
 ```
 
 **TO THIS:**
+
 ```dockerfile
 # Use specific version for reproducibility and security
 FROM node:20.11-alpine3.20 AS builder
@@ -65,7 +69,8 @@ FROM node:20.11-alpine3.20 AS builder
 FROM node:20.11-alpine3.20
 ```
 
-**Why:** 
+**Why:**
+
 - `lts` tag can change unexpectedly (breaking changes)
 - Specific version prevents silent breaking changes
 - Easier to track when vulnerability patches are applied
@@ -111,10 +116,12 @@ This makes it easier to add/remove images without editing YAML.
 ## Step 6: Handle Corrupted Filenames (If on Linux/Mac)
 
 The following files have invalid Windows filenames and prevent checkout on Windows:
+
 - `File 2: .github/workflows/docker-scout-notifications.yml`
 - `File 3: .github/workflows/docker-build-scan.yml`
 
 **On Linux/Mac only:**
+
 ```bash
 # These files are actually present with broken names, rename them:
 cd 1st-repo
@@ -124,6 +131,7 @@ ls -la ".github/workflows/" | grep "^File"
 ```
 
 **Recommended:** Create a new clean branch without these corrupted files:
+
 ```bash
 git checkout --orphan clean-main
 git add -A
@@ -170,13 +178,13 @@ git diff --cached --name-only | while read file; do
     echo "❌ Error: Cannot commit files in .venv/ directory"
     exit 1
   fi
-  
+
   # Reject node_modules commits
   if [[ $file == node_modules/* ]]; then
     echo "❌ Error: Cannot commit files in node_modules/ directory"
     exit 1
   fi
-  
+
   # Reject large files (>10MB)
   size=$(git diff-index --cached HEAD -- "$file" | awk '{print $5}')
   if [[ $size -gt 10485760 ]]; then
@@ -189,6 +197,7 @@ exit 0
 ```
 
 Make executable:
+
 ```bash
 chmod +x .git/hooks/pre-commit
 ```

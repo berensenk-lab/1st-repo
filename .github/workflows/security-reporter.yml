@@ -22,7 +22,7 @@ jobs:
               body: `## Urgent Security Alert\n\n**Image:** almosega/minikube:patched\n**Critical CVEs:** 7\n**High CVEs:** 63\n**Medium CVEs:** 123\n\n### Top Vulnerable Packages\n- Go stdlib (1.19.8, 1.24.0+) - Multiple critical CVEs\n- golang.org/x/crypto - Cryptographic vulnerabilities\n- github.com/docker/docker 27.0.2 - Container runtime issues\n\n### Immediate Actions Required\n1. Update Go to 1.24.11 or later\n2. Update crypto libraries\n3. Update container dependencies\n4. Rebuild and rescan\n\n### Timeline\n- Target: Fix within 48 hours\n- Priority: Critical`,
               labels: ['security', 'critical', 'cve', 'minikube']
             });
-      
+
       - name: Create Medium CVE Issue for open-webui
         uses: actions/github-script@v7
         with:

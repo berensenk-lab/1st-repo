@@ -26,29 +26,29 @@ jobs:
         image:
           - 'almosega/minikube:patched'
           - 'almosega/open-webui:patched'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      
+
       - name: Pull Docker image
         run: docker pull ${{ matrix.image }}
-      
+
       - name: Generate safe filename
         id: filename
         run: |
           SAFE_NAME=$(echo "${{ matrix.image }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
           echo "safe_name=$SAFE_NAME" >> $GITHUB_OUTPUT
-      
+
       - name: Docker Scout CVE Scan
         uses: docker/scout-action@v1
         with:
@@ -58,7 +58,7 @@ jobs:
           summary: true
           write-comment: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Upload SARIF results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
         if: always()
