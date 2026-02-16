@@ -1,0 +1,7 @@
+app
+*.o
+*.a
+*.so
+.DS_Store
+.env
+.env.local
