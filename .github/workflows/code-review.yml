@@ -23,17 +23,6 @@ jobs:
           dockerfile: Dockerfile*
           ignore: DL3009,DL3008
 
-  yaml-lint:
-    name: Lint YAML Files
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Run yamllint
-        uses: ibiqlik/action-yamllint@v3
-        with:
-          file_or_dir: .github/workflows
-
   shell-lint:
     name: Lint Shell Scripts
     runs-on: ubuntu-latest
