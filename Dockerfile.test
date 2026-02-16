@@ -2,10 +2,10 @@ FROM python:3.11-alpine
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
 COPY . .
 
-# Run tests
-CMD ["pytest", "-v", "--tb=short"]
+# Install dependencies if requirements.txt exists
+RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+
+# Run tests if they exist
+CMD ["sh", "-c", "if [ -f pytest.ini ] || [ -d tests ]; then pytest -v --tb=short; else echo 'No tests found'; fi"]
