@@ -1,0 +1,31 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard"],
+  "schedule": ["before 3am on Monday"],
+  "dockerfile": {
+    "enabled": true
+  },
+  "github-actions": {
+    "enabled": true
+  },
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
+  "prConcurrentLimit": 5,
+  "prCreation": "immediate",
+  "labels": ["dependencies", "renovate"],
+  "automerge": true,
+  "automergeType": "pr",
+  "automergeStrategy": "squash",
+  "packageRules": [
+    {
+      "matchCategories": ["docker"],
+      "enabled": true,
+      "automerge": true
+    },
+    {
+      "matchDatasources": ["github-actions"],
+      "automerge": true
+    }
+  ]
+}

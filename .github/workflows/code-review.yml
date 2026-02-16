@@ -1,0 +1,46 @@
+name: Code Review
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  hadolint:
+    name: Lint Dockerfiles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile*
+          ignore: DL3009,DL3008
+
+  shell-lint:
+    name: Lint Shell Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: scripts
+
+  markdown-lint:
+    name: Lint Markdown
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run markdownlint
+        uses: nosborn/github-action-markdown-cli@v3.3.0
+        with:
+          files: docs,ANALYSIS_REPORT.md,CLEANUP_STEPS.md,SECURITY_HARDENING_SUMMARY.md,SUMMARY.md

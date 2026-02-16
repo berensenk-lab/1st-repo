@@ -1,0 +1,84 @@
+﻿# ============================================================================
+# Stage 1: Builder - Compile and prepare application
+# ============================================================================
+FROM node:20.11-alpine3.20 AS builder
+
+ARG APP_HOME=/home/node/app
+WORKDIR ${APP_HOME}
+
+# Install build dependencies
+RUN apk add --no-cache \
+    gcompat \
+    git \
+    git-lfs \
+    dos2unix \
+    python3 \
+    make \
+    g++
+
+# Copy all source first (needed for post-install.js)
+COPY . ./
+
+# Install production dependencies
+RUN npm ci --no-audit --no-fund --loglevel=error --no-progress --omit=dev && \
+    npm cache clean --force
+
+# Pre-compile webpack
+RUN node "./docker/build-lib.js"
+
+# Prepare entrypoint
+RUN chmod +x "./docker/docker-entrypoint.sh" && \
+    dos2unix "./docker/docker-entrypoint.sh"
+
+# ============================================================================
+# Stage 2: Runtime - Minimal production image
+# ============================================================================
+FROM node:20.11-alpine3.20
+
+ARG APP_HOME=/home/node/app
+
+# Install only runtime dependencies
+RUN apk add --no-cache \
+    gcompat \
+    tini \
+    git \
+    git-lfs \
+    ca-certificates && \
+    rm -rf /var/cache/apk/*
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+WORKDIR ${APP_HOME}
+
+# Copy from builder
+COPY --from=builder --chown=nodejs:nodejs ${APP_HOME} ./
+
+# Set environment
+ENV NODE_ENV=production \
+    NODE_OPTIONS=--max-old-space-size=2048
+
+# Create config directory
+RUN mkdir -p ./config && \
+    ln -s "./config/config.yaml" "config.yaml" || true && \
+    chown -R nodejs:nodejs ./
+
+# Configure git safe directory (restrict to app path for security)
+RUN git config --global --add safe.directory /home/node/app
+
+# Switch to non-root user
+USER nodejs
+
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:8000', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+
+# Proper signal handling
+ENTRYPOINT ["tini", "--", "./docker-entrypoint.sh"]
+
+LABEL maintainer="Security Scanning" \
+      description="SillyTavern - Secure containerized version" \
+      version="1.15.0"

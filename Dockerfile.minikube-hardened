@@ -1,0 +1,13 @@
+# Lightweight hardened base image for container applications
+# Uses distroless for minimal attack surface
+FROM gcr.io/distroless/cc-debian12:latest
+
+# Set labels
+LABEL maintainer="almosega"
+LABEL description="Hardened container with minimal attack surface using distroless"
+
+# Copy any application files if needed
+# COPY ./app /app
+
+# Default command
+CMD ["/bin/sh"]
