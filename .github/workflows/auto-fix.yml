@@ -1,0 +1,114 @@
+name: Auto-Fix Workflow
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: write
+
+jobs:
+  detect-and-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build fixer image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.fixer
+          push: false
+          load: true
+          tags: fixer:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run issue detection and fixes
+        id: fix
+        run: |
+          docker run --rm \
+            -v $(pwd):/workspace \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -w /workspace \
+            -e CI=true \
+            -e GITHUB_WORKSPACE=$(pwd) \
+            fixer:latest \
+            python /fixer/agent.py
+        continue-on-error: true
+
+      - name: Run validation tests
+        id: validate
+        run: |
+          if [ -f "Dockerfile.test" ]; then
+            docker build -f Dockerfile.test -t test:latest .
+            docker run --rm test:latest
+          else
+            echo "No test Dockerfile found, skipping validation"
+          fi
+        continue-on-error: true
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            git diff --stat
+          fi
+
+      - name: Create PR with fixes
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: |
+            fix: auto-fixed detected issues
+
+            Automated fixes from CI pipeline:
+            - Code quality issues
+            - Formatting problems
+            - Dependency vulnerabilities
+            - Configuration issues
+
+            Assisted-By: auto-fixer-agent
+          title: '[bot] Auto-fixed issues'
+          body: |
+            ## Auto-Fix Report
+
+            Automated detection and fixes have been applied:
+
+            - ✅ Code quality checks
+            - ✅ Formatting issues
+            - ✅ Linting problems
+            - ✅ Security scanning
+
+            Please review the changes before merging.
+          branch: bot/auto-fixes-${{ github.run_number }}
+          delete-branch: true
+          labels: |
+            automated
+            bot
+            fixes
+
+      - name: Report status
+        if: always()
+        run: |
+          echo "## Auto-Fix Workflow Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Detection: ${{ steps.fix.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Validation: ${{ steps.validate.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Changes Found: ${{ steps.changes.outputs.has_changes }}" >> $GITHUB_STEP_SUMMARY

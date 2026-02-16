@@ -1,0 +1,69 @@
+# Auto-Fix Agent Configuration
+# Customize detection and fix behavior
+
+detection:
+  # Enable/disable specific detectors
+  formatting: true          # Black, isort
+  linting: true            # pylint, flake8
+  security: true           # bandit, git-secrets
+  dependencies: true       # pip, npm outdated
+  docker: true            # Dockerfile best practices
+  git: true               # Commit quality
+  config: true            # docker-compose, config files
+
+fixers:
+  # Enable/disable specific fixers
+  auto_formatting: true
+  auto_imports: true
+  auto_dependencies: false  # Requires human review
+  security_fixes: false     # Requires human review
+
+validation:
+  # Run tests after fixes
+  run_tests: true
+  fail_on_test_error: true
+  validators:
+    - python
+    - javascript
+    - docker
+
+severity_levels:
+  critical:
+    - security vulnerability
+  high:
+    - docker best practices
+    - hardcoded secrets
+  medium:
+    - code quality
+    - linting issues
+  low:
+    - formatting
+    - import ordering
+
+pr_settings:
+  auto_create_pr: true
+  require_review: true
+  auto_merge: false         # Only merge after review
+  labels:
+    - automated
+    - bot
+    - fixes
+
+# Paths to exclude from fixes
+exclude_paths:
+  - vendor/
+  - node_modules/
+  - .venv/
+  - build/
+  - dist/
+  - __pycache__/
+
+# File patterns to check
+include_patterns:
+  - "*.py"
+  - "*.js"
+  - "*.ts"
+  - "Dockerfile"
+  - "docker-compose.yml"
+  - "requirements.txt"
+  - "package.json"
