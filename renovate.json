@@ -1,28 +1,23 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base"
-  ],
-  "schedule": [
-    "before 3am on Monday"
-  ],
-  "docker": {
-    "enabled": true
-  },
+  "extends": ["config:recommended"],
+  "schedule": ["before 3am on Monday"],
   "dockerfile": {
     "enabled": true
   },
-  "gitHub-actions": {
+  "github-actions": {
     "enabled": true
   },
-  "vulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
   "prConcurrentLimit": 5,
   "prCreation": "immediate",
-  "reviewers": [
-    "berensenk-lab"
-  ],
-  "labels": [
-    "dependencies",
-    "renovate"
+  "labels": ["dependencies", "renovate"],
+  "packageRules": [
+    {
+      "matchCategories": ["docker"],
+      "enabled": true
+    }
   ]
 }
